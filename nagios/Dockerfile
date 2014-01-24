@@ -1,11 +1,9 @@
 
-FROM ubuntu:12.10
+FROM sdbase
 
 ADD nagios-4.0.2.tar.gz /root/
 ADD nagios-plugins-1.5.tar.gz /root/
 
-RUN apt-get update
-RUN apt-get dist-upgrade -y
 RUN apt-get install -y apache2 libapache2-mod-php5 build-essential libgd2-xpm-dev vim python-setuptools openssh-server supervisor
 RUN mkdir -p /var/run/sshd
 RUN mkdir -p /var/log/supervisor

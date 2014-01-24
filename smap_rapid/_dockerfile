@@ -1,0 +1,51 @@
+FROM sdbase
+
+RUN apt-get install -y python-setuptools build-essential python-dev mercurial vim openssh-server supervisor
+RUN easy_install pip
+
+#Readingdb deps
+RUN echo "#!/bin/sh\nexit 101" > /usr/sbin/policy-rc.d; chmod +x /usr/sbin/policy-rc.d
+RUN apt-get install -y libdb5.3-dev libprotobuf-dev libprotoc-dev zlib1g-dev python-numpy swig postgresql git autoconf libtool check libprotobuf-c0-dev protobuf-c-compiler pkg-config postgresql postgresql-contrib python-psycopg2
+
+#Powerdb2 deps
+RUN apt-get install -y libcurl4-openssl-dev apache2 python-twisted python-scipy apache2-utils libapache2-mod-python python-openssl python-django python-flup libapache2-mod-wsgi 
+RUN pip install twisted ply zope.interface avro configobj python-dateutil httplib2 django-piston pycurl pandas BeautifulSoup
+
+#Make some dirs
+RUN mkdir -p /var/run/sshd
+RUN mkdir -p /var/log/supervisor
+RUN mkdir -p /etc/smap
+RUN mkdir -p /srv/smap_archiver/rdb # This is a volume directory
+
+#Get some sources
+ADD . /srv/repo
+ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN mkdir /srv/src
+RUN git clone https://github.com/SoftwareDefinedBuildings/readingdb.git /srv/src/readingdb
+RUN cd /srv/src/readingdb && git checkout DYNAMICALLYINSERTCOMMITIDHERE_READINGDB .
+RUN git clone https://github.com/SoftwareDefinedBuildings/smap.git /srv/smap
+RUN cd /srv/smap && git checkout DYNAMICALLYINSERTCOMMITIDHERE_SMAP .
+RUN git clone https://github.com/SoftwareDefinedBuildings/powerdb2.git /srv/powerdb2
+RUN cd /srv/powerdb2 && git checkout DYNAMICALLYINSERTCOMMITIDHERE_PDB2 .
+
+#Make some sources
+RUN cd /srv/src/readingdb && autoreconf --install && ./configure --prefix=/ && make -j8 && make install && cd src && make && make install
+RUN cd /srv/src/readingdb/python && make -j8 && make install 
+RUN cd /srv/repo && ./mk_archiver.sh
+RUN cd /srv/smap/python && python setup.py install
+RUN cp /srv/smap/python/conf/archiver.ini /etc/smap/
+RUN cd /srv/smap/python && python setup.py install #Twice seems necessary for the archiver twisted plugin :/
+RUN cp /srv/repo/powerdb2_site /etc/apache2/sites-available
+RUN cd /etc/apache2/sites-enabled && rm * && ln -s ../sites-available/powerdb2_site powerdb2_site
+RUN a2enmod proxy
+RUN a2enmod proxy_http
+RUN cd /srv/repo && ./mk_django.sh
+RUN cd /srv/repo && ./bootstrap_subkey.sh
+
+CMD /bin/bash
+#Need to run the following in the container if you want to login to powerdb2
+# cd /srv/powerdb2/
+# python manage.py changepassword root
+
+
+

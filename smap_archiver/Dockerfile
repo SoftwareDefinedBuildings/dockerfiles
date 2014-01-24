@@ -1,8 +1,5 @@
-FROM ubuntu:12.10
-MAINTAINER Michael Andersen <michael@steelcode.com>
+FROM sdbase
 
-RUN apt-get update
-RUN apt-get dist-upgrade -y
 RUN apt-get install -y python-setuptools build-essential python-dev mercurial vim
 RUN easy_install pip
 
@@ -38,5 +35,6 @@ RUN pip install ply zope.interface avro configobj python-dateutil httplib2 pycur
 RUN mkdir -p /var/run/sshd
 RUN mkdir -p /var/log/supervisor
 RUN cd /srv/smap/python && python setup.py install
+#RUN cd /srv/repo && ./bootstrap_subkey.sh
 
 
