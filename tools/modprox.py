@@ -56,7 +56,9 @@ def gen_config(record):
         sys.exit(1)
     doc = json.loads(doc)[0]
     ip = doc["NetworkSettings"]["IPAddress"]
-    
+    if ip == "":
+        #The host is down, don't try proxy to it
+        return
     of = open("/etc/nginx/sites-enabled/auto-serve-{}.conf".format(record["url"]),"w")
     of.write(confile.format(tname=record["name"], tport=record["port"], turl=record["url"], tip=ip))
     of.close()

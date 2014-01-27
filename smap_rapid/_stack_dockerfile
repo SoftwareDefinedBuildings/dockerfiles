@@ -1,6 +1,6 @@
 FROM sdbase
 
-RUN apt-get install -y python-setuptools build-essential python-dev mercurial vim openssh-server supervisor
+RUN apt-get install -y python-setuptools build-essential python-dev mercurial vim openssh-server
 RUN easy_install pip
 
 #Readingdb deps
@@ -19,14 +19,14 @@ RUN mkdir -p /srv/smap_archiver/rdb # This is a volume directory
 
 #Get some sources
 ADD . /srv/repo
-ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+ADD stack_supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN mkdir /srv/src
 RUN git clone https://github.com/SoftwareDefinedBuildings/readingdb.git /srv/src/readingdb
-RUN cd /srv/src/readingdb && git checkout DYNAMICALLYINSERTCOMMITIDHERE_READINGDB .
+RUN cd /srv/src/readingdb && git checkout DYNAMICALLYINSERTCOMMITIDHERE_READINGDB 
 RUN git clone https://github.com/SoftwareDefinedBuildings/smap.git /srv/smap
-RUN cd /srv/smap && git checkout DYNAMICALLYINSERTCOMMITIDHERE_SMAP .
+RUN cd /srv/smap && git checkout DYNAMICALLYINSERTCOMMITIDHERE_SMAP 
 RUN git clone https://github.com/SoftwareDefinedBuildings/powerdb2.git /srv/powerdb2
-RUN cd /srv/powerdb2 && git checkout DYNAMICALLYINSERTCOMMITIDHERE_PDB2 .
+RUN cd /srv/powerdb2 && git checkout DYNAMICALLYINSERTCOMMITIDHERE_PDB2 
 
 #Make some sources
 RUN cd /srv/src/readingdb && autoreconf --install && ./configure --prefix=/ && make -j8 && make install && cd src && make && make install

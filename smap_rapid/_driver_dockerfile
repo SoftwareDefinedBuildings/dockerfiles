@@ -1,0 +1,27 @@
+FROM sdbase
+
+RUN apt-get install -y python-setuptools build-essential python-dev mercurial vim git
+RUN apt-get install -y openssh-server curl python-pycurl python-twisted 
+RUN apt-get install -y libcurl4-openssl-dev apache2 python-twisted python-scipy apache2-utils libapache2-mod-python python-openssl libapache2-mod-wsgi 
+RUN easy_install pip
+RUN pip install ply zope.interface avro configobj python-dateutil httplib2 pycurl pandas
+
+RUN mkdir -p /var/run/sshd
+
+#Get some sources
+RUN mkdir /srv/src
+RUN git clone https://github.com/SoftwareDefinedBuildings/smap.git /srv/smap
+RUN cd /srv/smap && git checkout DYNAMICALLYINSERTCOMMITIDHERE_SMAP
+
+#Make some sources
+ADD . /srv/repo
+RUN cd /srv/smap/python && python setup.py install
+RUN mkdir -p /etc/smap
+ADD driver_supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN cd /srv/smap/python && python setup.py install
+RUN chmod a+rw /var/log/supervisor
+
+
+
+
+
