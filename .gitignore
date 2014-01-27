@@ -1,5 +1,7 @@
 *~
+*.pyc
 smap_rapid/Dockerfile
 smap_rapid/log
 nagios/nagios-4.0.2.tar.gz
 nagios/nagios-plugins-1.5.tar.gz
+bearloc/BEARLOC_BUILD*

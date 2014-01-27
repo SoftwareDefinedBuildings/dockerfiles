@@ -39,16 +39,6 @@ confile="""
 
 """
 
-parser = argparse.ArgumentParser(description='Add a vhost proxy definition to nginx')
-parser.add_argument('--add', help="add a new record (requires name, port and url)", action="store_true")
-parser.add_argument("--remove", help="remove a record. Required the url", action="store_true")
-parser.add_argument('--list', help="list all records as they were prior to any actions", action="store_true")
-parser.add_argument('--name',help="the instance name")
-parser.add_argument('--port',help="the port on the instance to proxy to")
-parser.add_argument('--url',help="the complete hostname to listen for")
-parser.add_argument('--regen',help="remove and regenerate all automatic records", action="store_const",const=True,default=False)
-args = parser.parse_args()
-
 def gen_config(record):
     doc = subprocess.check_output(["docker", "inspect", record["name"]])
     if len(doc) == 0:
@@ -73,37 +63,53 @@ def del_configs():
             fname = os.path.join(fpath, f)
             os.unlink(fname)
 
-if args.list:
-   for i in db.entities.find():
-        print "RECORD: {url} to docker://{name}:{port}".format(**i)
-         
-if args.add:    
-    if args.name is None or args.port is None or args.url is None:
-        print "You need the name, port and URL to add a record"
-        sys.exit(1)
-            
-    #Try update existing config for that name:
-    existing = db.entities.find_one({"url":args.url, "port":args.port})
-    record = {"url":args.url, "port":args.port, "name":args.name}
-    if existing is not None:
-        record["_id"] = existing["_id"]
-    db.entities.save(record)
-    gen_config(record)
+def call(args):
+    if args.list:
+       for i in db.entities.find():
+            print "RECORD: {url} to docker://{name}:{port}".format(**i)
+             
+    if args.add:    
+        if args.name is None or args.port is None or args.url is None:
+            print "You need the name, port and URL to add a record"
+            sys.exit(1)
+                
+        #Try update existing config for that name:
+        existing = db.entities.find_one({"url":args.url, "port":args.port})
+        record = {"url":args.url, "port":args.port, "name":args.name}
+        if existing is not None:
+            record["_id"] = existing["_id"]
+        db.entities.save(record)
+        gen_config(record)
 
-if args.remove:
-    if args.url is None:
-        print "You need the URL to remove a record"
-        sys.exit(1)
-    db.entities.remove({"url":args.url})
-            
-if args.regen:
-    del_configs()
-    for i in db.entities.find():
-        print "adding: {url} to docker://{name}:{port}".format(**i)
-        gen_config(i)
+    if args.remove:
+        if args.url is None:
+            print "You need the URL to remove a record"
+            sys.exit(1)
+        db.entities.remove({"url":args.url})
+                
+    if args.regen:
+        del_configs()
+        for i in db.entities.find():
+            print "adding: {url} to docker://{name}:{port}".format(**i)
+            gen_config(i)
 
-op = subprocess.check_output(["/usr/sbin/nginx", "-t"])
-op = subprocess.check_output(["service", "nginx","reload"])
+    op = subprocess.check_output(["/usr/sbin/nginx", "-t"])
+    op = subprocess.check_output(["service", "nginx","reload"])
+    
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Add a vhost proxy definition to nginx')
+    parser.add_argument('--add', help="add a new record (requires name, port and url)", action="store_true")
+    parser.add_argument("--remove", help="remove a record. Required the url", action="store_true")
+    parser.add_argument('--list', help="list all records as they were prior to any actions", action="store_true")
+    parser.add_argument('--name',help="the instance name")
+    parser.add_argument('--port',help="the port on the instance to proxy to")
+    parser.add_argument('--url',help="the complete hostname to listen for")
+    parser.add_argument('--regen',help="remove and regenerate all automatic records", action="store_const",const=True,default=False)
+    args = parser.parse_args()
+
+    call(args)
+
+    
 
 
 
